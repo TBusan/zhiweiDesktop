@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QIcon, QFont, QAction
 from detail_window import DetailWindow  # 导入新创建的DetailWindow类
+from download_manager import DownloadManager  # 导入下载管理器类
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
@@ -145,7 +146,7 @@ class DataAnalysisClient(QMainWindow):
         download_btn.clicked.connect(lambda: self.download_item("测试456987"))
         self.test_tree.setItemWidget(activated_item, 1, download_btn)
         
-        # 右侧内容区域（这里只是一个占位符）
+        # 右侧内容区域
         self.content_area = QWidget()
         self.content_layout = QVBoxLayout(self.content_area)
         self.content_area.setStyleSheet("background-color: #e6e9f0;")
@@ -155,6 +156,9 @@ class DataAnalysisClient(QMainWindow):
         self.selected_item_label.setAlignment(Qt.AlignCenter)
         self.selected_item_label.setStyleSheet("color: #666; font-size: 16px;")
         self.content_layout.addWidget(self.selected_item_label)
+        
+        # 创建下载管理器实例（初始隐藏）
+        self.download_manager = None
         
         # 添加到分割器
         main_splitter.addWidget(navigation_panel)
@@ -369,8 +373,22 @@ class DataAnalysisClient(QMainWindow):
         """状态栏按钮点击事件"""
         if button_text == "在线任务":
             self.statusBar().showMessage("正在查看在线任务...", 2000)
+            # 显示默认内容
+            self.selected_item_label.show()
+            if self.download_manager:
+                self.download_manager.centralWidget().hide()
         elif button_text == "下载管理":
+            # 在内容区域显示下载管理器
             self.statusBar().showMessage("正在打开下载管理...", 2000)
+            self.selected_item_label.hide()
+            
+            # 如果下载管理器不存在，创建一个
+            if not self.download_manager:
+                self.download_manager = DownloadManager()
+                self.content_layout.addWidget(self.download_manager.centralWidget())
+            
+            # 显示下载管理器
+            self.download_manager.centralWidget().show()
 
 if __name__ == "__main__":
     # 如果直接运行此文件，提示需要通过登录页面进入
