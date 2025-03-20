@@ -2,14 +2,26 @@ import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                               QHBoxLayout, QLineEdit, QLabel, QPushButton, 
                               QTreeWidget, QTreeWidgetItem, QSplitter, QMenu, QStyle)
-from PySide6.QtCore import Qt, QSize, Signal, QUrl
+from PySide6.QtCore import Qt, QSize, Signal, QUrl, QObject, Slot
 from PySide6.QtGui import QIcon, QFont, QAction
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
+from PySide6.QtWebChannel import QWebChannel
 from detail_window import DetailWindow  # 导入新创建的DetailWindow类
 from download_manager import DownloadManager  # 导入下载管理器类
 from settings_dialog import SettingsDialog  # 导入设置对话框类
 import os
+import json
+
+# 创建一个用于与JavaScript通信的类
+class Bridge(QObject):
+    def __init__(self):
+        super().__init__()
+        
+    @Slot(float, float)
+    def updateLocation(self, lat, lng):
+        """接收Python传来的经纬度信息"""
+        pass
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
@@ -193,6 +205,12 @@ class DataAnalysisClient(QMainWindow):
         settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, True)
         settings.setAttribute(QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, True)
         
+        # 设置WebChannel
+        self.channel = QWebChannel()
+        self.bridge = Bridge()
+        self.channel.registerObject("pyjs", self.bridge)
+        self.web_view.page().setWebChannel(self.channel)
+        
         # 获取index.html的绝对路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
         html_path = os.path.join(current_dir, "map", "index.html")
@@ -293,8 +311,24 @@ class DataAnalysisClient(QMainWindow):
     def on_item_clicked(self, item, column):
         """树项目点击事件"""
         if item.parent():  # 仅处理子项目点击
-            self.selected_item_label.setText(f"已选择: {item.text(0)}")
-            self.statusBar().showMessage(f"选中项目: {item.text(0)}", 2000)
+            # 这里应该根据实际情况获取经纬度信息
+            # 这里使用示例数据
+            coordinates = {
+                "cs3": [39.9042, 116.4074],  # 北京
+                "cs2": [31.2304, 121.4737],  # 上海
+                "cs1": [23.1291, 113.2644],  # 广州
+                "华明路_测试": [39.1088, 117.1886],  # 天津
+                # 可以添加更多项目的经纬度信息
+            }
+            
+            item_name = item.text(0)
+            if item_name in coordinates:
+                lat, lng = coordinates[item_name]
+                # 调用JavaScript函数更新地图位置
+                js_code = f"updateMapLocation({lat}, {lng});"
+                self.web_view.page().runJavaScript(js_code)
+            
+            self.statusBar().showMessage(f"选中项目: {item_name}", 2000)
     
     def download_item(self, item_name):
         """下载项目"""
