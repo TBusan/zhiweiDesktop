@@ -31,18 +31,25 @@
 
     <script>
         // 初始化地图对象，设置中心点和缩放级别
-        let map = L.map('map').setView([39.9042, 116.4074], 13); // 北京坐标，缩放级别13
+        let map = L.map('map', {
+            center: [39.9042, 116.4074],  // 北京坐标
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: false  // 不显示版权信息
+        });
 
-        // 添加 OpenStreetMap 图层
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // 使用高德地图瓦片图层
+        L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+            subdomains: ["1", "2", "3", "4"],  // 高德地图子域名
+            maxZoom: 18,  // 最大缩放级别
+            minZoom: 3    // 最小缩放级别
         }).addTo(map);
 
-        // 添加一个标记（可选）
+        // 添加一个标记
         L.marker([39.9042, 116.4074])
             .addTo(map)
-            .bindPopup('这里是北京！') // 绑定弹出窗口
-            .openPopup(); // 自动打开弹出窗口
+            .bindPopup('这里是北京！')
+            .openPopup();
     </script>
 </body>
 </html>
