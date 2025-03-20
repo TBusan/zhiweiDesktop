@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QIcon, QFont, QAction
 from detail_window import DetailWindow  # 导入新创建的DetailWindow类
 from download_manager import DownloadManager  # 导入下载管理器类
+from settings_dialog import SettingsDialog  # 导入设置对话框类
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
@@ -22,6 +23,25 @@ class DataAnalysisClient(QMainWindow):
         super().__init__()
         self.setWindowTitle("知微客户端")
         self.setMinimumSize(1000, 600)
+        
+        # 创建设置按钮
+        settings_btn = QPushButton()
+        settings_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogHelpButton))
+        settings_btn.setIconSize(QSize(20, 20))
+        settings_btn.setFixedSize(30, 30)
+        settings_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+                padding: 2px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+                border-radius: 15px;
+            }
+        """)
+        settings_btn.clicked.connect(self.show_settings)
+        self.statusBar().addPermanentWidget(settings_btn)
         
         # 存储详情窗口的字典
         self.detail_windows = {}
@@ -412,6 +432,11 @@ class DataAnalysisClient(QMainWindow):
             # 添加下载管理器到布局
             self.main_layout.addWidget(self.download_manager)
             self.download_manager.show()
+
+    def show_settings(self):
+        """显示设置对话框"""
+        settings_dialog = SettingsDialog(self)
+        settings_dialog.exec()
 
 if __name__ == "__main__":
     # 如果直接运行此文件，提示需要通过登录页面进入
