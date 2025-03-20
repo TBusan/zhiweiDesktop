@@ -23,7 +23,7 @@ class Bridge(QObject):
         
     def init_database(self):
         """初始化数据库"""
-        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'map_data.db')
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'datasource', 'map_data.db')
         
         # 连接到数据库（如果不存在则创建）
         with sqlite3.connect(db_path) as conn:
