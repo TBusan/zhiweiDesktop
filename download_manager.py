@@ -6,7 +6,6 @@ from PySide6.QtCore import Qt
 class DownloadManager(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # 移除窗口标题和大小设置，因为现在是嵌入式的
         
         # 创建中央部件
         central_widget = QWidget()
@@ -76,7 +75,12 @@ class DownloadManager(QMainWindow):
         # 添加一些测试数据
         self.add_test_data()
         
-        # 移除状态栏，因为现在是嵌入式的
+        # 设置整体样式
+        central_widget.setStyleSheet("""
+            QWidget {
+                background-color: #f5f5f5;
+            }
+        """)
     
     def add_test_data(self):
         """添加测试数据到表格"""

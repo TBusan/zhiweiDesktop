@@ -26,9 +26,15 @@ class DataAnalysisClient(QMainWindow):
         # 存储详情窗口的字典
         self.detail_windows = {}
         
-        # 主分割器
-        main_splitter = QSplitter(Qt.Horizontal)
-        self.setCentralWidget(main_splitter)
+        # 创建主容器
+        self.main_container = QWidget()
+        self.main_layout = QVBoxLayout(self.main_container)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.setCentralWidget(self.main_container)
+        
+        # 创建主分割器
+        self.main_splitter = QSplitter(Qt.Horizontal)
+        self.main_layout.addWidget(self.main_splitter)
         
         # 左侧导航面板
         navigation_panel = QWidget()
@@ -161,11 +167,11 @@ class DataAnalysisClient(QMainWindow):
         self.download_manager = None
         
         # 添加到分割器
-        main_splitter.addWidget(navigation_panel)
-        main_splitter.addWidget(self.content_area)
+        self.main_splitter.addWidget(navigation_panel)
+        self.main_splitter.addWidget(self.content_area)
         
         # 设置分割比例
-        main_splitter.setSizes([350, 650])
+        self.main_splitter.setSizes([350, 650])
         
         # 添加底部状态栏按钮
         self.statusBar().addPermanentWidget(self.create_status_button("在线任务"))
@@ -373,22 +379,39 @@ class DataAnalysisClient(QMainWindow):
         """状态栏按钮点击事件"""
         if button_text == "在线任务":
             self.statusBar().showMessage("正在查看在线任务...", 2000)
-            # 显示默认内容
-            self.selected_item_label.show()
+            # 恢复原始布局
             if self.download_manager:
-                self.download_manager.centralWidget().hide()
+                self.download_manager.hide()
+            
+            # 从主布局中移除当前部件
+            if self.main_layout.count() > 0:
+                current_widget = self.main_layout.itemAt(0).widget()
+                if current_widget:
+                    current_widget.hide()
+                    self.main_layout.removeWidget(current_widget)
+            
+            # 添加主分割器到布局
+            self.main_layout.addWidget(self.main_splitter)
+            self.main_splitter.show()
+            
         elif button_text == "下载管理":
-            # 在内容区域显示下载管理器
+            # 显示下载管理器
             self.statusBar().showMessage("正在打开下载管理...", 2000)
-            self.selected_item_label.hide()
             
             # 如果下载管理器不存在，创建一个
             if not self.download_manager:
-                self.download_manager = DownloadManager()
-                self.content_layout.addWidget(self.download_manager.centralWidget())
+                self.download_manager = DownloadManager(self)
             
-            # 显示下载管理器
-            self.download_manager.centralWidget().show()
+            # 从主布局中移除当前部件
+            if self.main_layout.count() > 0:
+                current_widget = self.main_layout.itemAt(0).widget()
+                if current_widget:
+                    current_widget.hide()
+                    self.main_layout.removeWidget(current_widget)
+            
+            # 添加下载管理器到布局
+            self.main_layout.addWidget(self.download_manager)
+            self.download_manager.show()
 
 if __name__ == "__main__":
     # 如果直接运行此文件，提示需要通过登录页面进入
