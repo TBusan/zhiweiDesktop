@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PySide6.QtCore import Qt, QSize, Signal, QUrl
 from PySide6.QtGui import QIcon, QFont, QAction
 from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
 from detail_window import DetailWindow  # 导入新创建的DetailWindow类
 from download_manager import DownloadManager  # 导入下载管理器类
 from settings_dialog import SettingsDialog  # 导入设置对话框类
@@ -182,6 +183,15 @@ class DataAnalysisClient(QMainWindow):
         
         # 创建Web视图
         self.web_view = QWebEngineView()
+        
+        # 配置 WebEngine 设置
+        profile = QWebEngineProfile.defaultProfile()
+        settings = profile.settings()
+        
+        # 允许跨域访问
+        settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, True)
         
         # 获取index.html的绝对路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
