@@ -3,17 +3,25 @@
 <head>
     <title>Leaflet 简单示例</title>
     
-    <!-- 引入 Leaflet CSS 文件 -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- 引入本地 Leaflet CSS 文件 -->
+    <link rel="stylesheet" href="leaflet.css" />
     
-    <!-- 引入 Leaflet JS 文件 -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- 引入本地 Leaflet JS 文件 -->
+    <script src="leaflet.js"></script>
     
     <!-- 设置地图容器样式 -->
     <style>
         #map {
-            height: 600px;  /* 必须设置高度，否则地图不会显示 */
-            width: 800px;
+            height: 100vh;  /* 使用视口高度，确保地图填充整个可用空间 */
+            width: 100%;   /* 使用100%宽度 */
+            margin: 0;     /* 移除边距 */
+            padding: 0;    /* 移除内边距 */
+        }
+        
+        /* 移除body的默认边距 */
+        body {
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>

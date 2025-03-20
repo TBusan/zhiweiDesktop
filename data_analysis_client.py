@@ -1,12 +1,14 @@
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                               QHBoxLayout, QLineEdit, QLabel, QPushButton, 
-                              QTreeWidget, QTreeWidgetItem, QSplitter, QMenu,QStyle)
-from PySide6.QtCore import Qt, QSize, Signal
+                              QTreeWidget, QTreeWidgetItem, QSplitter, QMenu, QStyle)
+from PySide6.QtCore import Qt, QSize, Signal, QUrl
 from PySide6.QtGui import QIcon, QFont, QAction
+from PySide6.QtWebEngineWidgets import QWebEngineView
 from detail_window import DetailWindow  # 导入新创建的DetailWindow类
 from download_manager import DownloadManager  # 导入下载管理器类
 from settings_dialog import SettingsDialog  # 导入设置对话框类
+import os
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
@@ -175,13 +177,21 @@ class DataAnalysisClient(QMainWindow):
         # 右侧内容区域
         self.content_area = QWidget()
         self.content_layout = QVBoxLayout(self.content_area)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         self.content_area.setStyleSheet("background-color: #e6e9f0;")
         
-        # 右侧显示选中项的标签
-        self.selected_item_label = QLabel("请从左侧选择一个项目")
-        self.selected_item_label.setAlignment(Qt.AlignCenter)
-        self.selected_item_label.setStyleSheet("color: #666; font-size: 16px;")
-        self.content_layout.addWidget(self.selected_item_label)
+        # 创建Web视图
+        self.web_view = QWebEngineView()
+        
+        # 获取index.html的绝对路径
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        html_path = os.path.join(current_dir, "map", "index.html")
+        
+        # 加载本地HTML文件
+        self.web_view.load(QUrl.fromLocalFile(html_path))
+        
+        # 将Web视图添加到内容区域
+        self.content_layout.addWidget(self.web_view)
         
         # 创建下载管理器实例（初始隐藏）
         self.download_manager = None
