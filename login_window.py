@@ -20,7 +20,7 @@ class LoginWindow(QMainWindow):
         layout.setContentsMargins(60, 40, 60, 40)  # 增加边距
         
         # 添加标题
-        title_label = QLabel("数据分析客户端")
+        title_label = QLabel("知微客户端")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-size: 28px; font-weight: bold; color: #333; margin-bottom: 20px;")
         layout.addWidget(title_label)
@@ -39,6 +39,7 @@ class LoginWindow(QMainWindow):
                 border-radius: 6px;
                 font-size: 16px;
                 background-color: white;
+                color: #000000;
             }
             QLineEdit:focus {
                 border: 2px solid #3a3f51;
@@ -63,6 +64,7 @@ class LoginWindow(QMainWindow):
                 border-radius: 6px;
                 font-size: 16px;
                 background-color: white;
+                color: #000000;
             }
             QLineEdit:focus {
                 border: 2px solid #3a3f51;
@@ -73,18 +75,20 @@ class LoginWindow(QMainWindow):
         layout.addLayout(password_layout)
         
         # 登录按钮
-        self.login_button = QPushButton("登录")
-        self.login_button.setMinimumHeight(45)  # 设置最小高度
+        self.login_button = QPushButton("登 录")  # 在两个字之间加入空格
+        self.login_button.setMinimumHeight(50)  # 增加按钮高度
         self.login_button.setStyleSheet("""
             QPushButton {
                 background-color: #3a3f51;
                 color: white;
                 border: none;
                 border-radius: 6px;
-                padding: 12px;
-                font-size: 16px;
-                min-width: 200px;
+                padding: 12px 24px;  # 增加水平内边距
+                font-size: 18px;
+                font-weight: bold;
+                min-width: 250px;
                 margin-top: 20px;
+                letter-spacing: 4px;  # 添加字间距
             }
             QPushButton:hover {
                 background-color: #2c3143;
