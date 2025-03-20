@@ -54,7 +54,7 @@ class Bridge(QObject):
             radius = draw_data.get('radius')  # 圆形才有半径
             
             # 连接数据库并保存数据
-            db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'map_data.db')
+            db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasource', 'map_data.db')
             with sqlite3.connect(db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
