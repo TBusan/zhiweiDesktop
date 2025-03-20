@@ -1,4 +1,8 @@
 import sys
+import os
+import json
+import sqlite3
+from datetime import datetime
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                               QHBoxLayout, QLineEdit, QLabel, QPushButton, 
                               QTreeWidget, QTreeWidgetItem, QSplitter, QMenu, QStyle)
@@ -10,14 +14,59 @@ from PySide6.QtWebChannel import QWebChannel
 from detail_window import DetailWindow  # 导入新创建的DetailWindow类
 from download_manager import DownloadManager  # 导入下载管理器类
 from settings_dialog import SettingsDialog  # 导入设置对话框类
-import os
-import json
 
 # 创建一个用于与JavaScript通信的类
 class Bridge(QObject):
     def __init__(self):
         super().__init__()
+        self.init_database()
         
+    def init_database(self):
+        """初始化数据库"""
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'map_data.db')
+        
+        # 连接到数据库（如果不存在则创建）
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 创建绘制数据表
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS drawings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    coordinates TEXT NOT NULL,
+                    radius REAL,
+                    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.commit()
+    
+    @Slot(str)
+    def saveDrawing(self, draw_data_json):
+        """保存绘制的数据到数据库"""
+        try:
+            # 解析JSON数据
+            draw_data = json.loads(draw_data_json)
+            
+            # 准备数据
+            draw_type = draw_data['type']
+            coordinates = json.dumps(draw_data['coordinates'])
+            radius = draw_data.get('radius')  # 圆形才有半径
+            
+            # 连接数据库并保存数据
+            db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'map_data.db')
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'INSERT INTO drawings (type, coordinates, radius) VALUES (?, ?, ?)',
+                    (draw_type, coordinates, radius)
+                )
+                conn.commit()
+                
+            print(f"Successfully saved {draw_type} drawing to database")
+        except Exception as e:
+            print(f"Error saving drawing data: {str(e)}")
+    
     @Slot(float, float)
     def updateLocation(self, lat, lng):
         """接收Python传来的经纬度信息"""

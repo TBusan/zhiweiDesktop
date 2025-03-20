@@ -9,6 +9,14 @@
     <!-- 引入本地 Leaflet JS 文件 -->
     <script src="leaflet.js"></script>
     
+    <!-- 引入 Leaflet.draw CSS -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/> -->
+    <link rel="stylesheet" href="leaflet.draw.css"/>
+    
+    <!-- 引入 Leaflet.draw JS -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script> -->
+    <script src="leaflet.draw.js"></script>
+    
     <!-- 设置地图容器样式 -->
     <style>
         #map {
@@ -47,6 +55,73 @@
 
         // 创建一个全局的标记变量
         let currentMarker = null;
+
+        // 创建绘制控件
+        let drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        let drawControl = new L.Control.Draw({
+            draw: {
+                marker: true,
+                circle: true,
+                rectangle: true,
+                polygon: true,
+                polyline: true,
+                circlemarker: false
+            },
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            }
+        });
+        map.addControl(drawControl);
+
+        // 监听绘制完成事件
+        map.on('draw:created', function(e) {
+            let layer = e.layer;
+            drawnItems.addLayer(layer);
+            
+            // 获取绘制的图形数据
+            let drawData = {
+                type: e.layerType,
+                coordinates: []
+            };
+            
+            // 根据不同类型的图形获取坐标
+            if (e.layerType === 'marker') {
+                let latlng = layer.getLatLng();
+                drawData.coordinates = [latlng.lat, latlng.lng];
+            }
+            else if (e.layerType === 'circle') {
+                let center = layer.getLatLng();
+                let radius = layer.getRadius();
+                drawData.coordinates = [center.lat, center.lng];
+                drawData.radius = radius;
+            }
+            else if (e.layerType === 'rectangle') {
+                let bounds = layer.getBounds();
+                drawData.coordinates = [
+                    [bounds.getNorth(), bounds.getWest()],
+                    [bounds.getNorth(), bounds.getEast()],
+                    [bounds.getSouth(), bounds.getEast()],
+                    [bounds.getSouth(), bounds.getWest()]
+                ];
+            }
+            else if (e.layerType === 'polygon' || e.layerType === 'polyline') {
+                let latlngs = layer.getLatLngs();
+                if (Array.isArray(latlngs[0])) {
+                    // 多边形可能有多个环
+                    drawData.coordinates = latlngs[0].map(latlng => [latlng.lat, latlng.lng]);
+                } else {
+                    drawData.coordinates = latlngs.map(latlng => [latlng.lat, latlng.lng]);
+                }
+            }
+            
+            // 将数据发送到Python
+            if (window.pyjs) {
+                window.pyjs.saveDrawing(JSON.stringify(drawData));
+            }
+        });
 
         // 定义接收经纬度的函数
         function updateMapLocation(lat, lng) {
