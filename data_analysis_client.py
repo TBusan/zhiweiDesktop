@@ -1,8 +1,7 @@
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                               QHBoxLayout, QLineEdit, QLabel, QPushButton, 
-                              QTreeWidget, QTreeWidgetItem, QSplitter, QMenu,
-                              QStyle)
+                              QTreeWidget, QTreeWidgetItem, QSplitter, QMenu,QStyle)
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QIcon, QFont, QAction
 from detail_window import DetailWindow  # 导入新创建的DetailWindow类
@@ -354,17 +353,16 @@ class DataAnalysisClient(QMainWindow):
         
         # 如果该项目的窗口已经存在，就显示已有窗口
         if item_name in self.detail_windows:
-            self.detail_windows[item_name].showMaximized()  # 使用最大化显示
-            self.detail_windows[item_name].raise_()  
+            self.detail_windows[item_name].showMaximized()
+            self.detail_windows[item_name].raise_()
             self.detail_windows[item_name].activateWindow()
         else:
-            # 创建新窗口并保存
-            detail_window = DetailWindow(item_name)
-            detail_window.setParent(None)  # 设置为无父窗口
+            # 创建新窗口并保存，传递self作为父窗口
+            detail_window = DetailWindow(item_name, self)
             self.detail_windows[item_name] = detail_window
-            detail_window.showMaximized()  # 使用最大化显示
+            detail_window.showMaximized()
         
-        # 可选：隐藏主窗口
+        # 隐藏主窗口
         self.hide()
     
     def on_status_button_clicked(self, button_text):

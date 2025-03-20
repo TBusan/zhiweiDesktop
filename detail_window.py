@@ -1,14 +1,15 @@
 import sys
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                               QLabel, QPushButton, QComboBox, QLineEdit,
-                              QSpinBox, QDoubleSpinBox, QCheckBox, QApplication)
-from PySide6.QtCore import Qt
+                              QSpinBox, QDoubleSpinBox, QCheckBox, QApplication,QStyle)
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon, QFont
 
 class DetailWindow(QMainWindow):
-    def __init__(self, item_name):
-        super().__init__()
+    def __init__(self, item_name, parent=None):
+        super().__init__(parent)
         self.item_name = item_name
+        self.parent_window = parent
         self.setWindowTitle(f"数据分析客户端")
         self.setMinimumSize(1200, 800)
         # 设置为独立窗口
@@ -20,6 +21,34 @@ class DetailWindow(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(5)
+        
+        # 添加返回按钮到顶部
+        top_bar = QWidget()
+        top_bar_layout = QHBoxLayout(top_bar)
+        top_bar_layout.setContentsMargins(0, 0, 0, 5)
+        
+        back_btn = QPushButton()
+        back_btn.setIcon(QApplication.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack))
+        back_btn.setIconSize(QSize(24, 24))
+        back_btn.setFixedSize(36, 36)
+        back_btn.setObjectName("back_button")
+        back_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+                border-radius: 18px;
+            }
+        """)
+        back_btn.setToolTip("返回")
+        back_btn.clicked.connect(self.go_back)
+        
+        top_bar_layout.addWidget(back_btn)
+        top_bar_layout.addStretch()
+        
+        main_layout.addWidget(top_bar)
         
         # 顶部工具栏
         toolbar = QWidget()
@@ -269,17 +298,25 @@ class DetailWindow(QMainWindow):
         
         self.statusBar().addPermanentWidget(nav_widget)
 
-    def closeEvent(self, event):
-        """重写关闭事件，清理资源"""
-        parent = self.parent()
-        if parent and hasattr(parent, 'detail_windows'):
-            parent.detail_windows.pop(self.item_name, None)
+    def go_back(self):
+        """返回到主窗口"""
+        if self.parent_window:
+            # 从父窗口的字典中移除自己
+            if hasattr(self.parent_window, 'detail_windows'):
+                self.parent_window.detail_windows.pop(self.item_name, None)
+            self.parent_window.show()
+        self.close()
         
-        # 找到主应用窗口并显示
-        for widget in QApplication.topLevelWidgets():
-            if isinstance(widget, QMainWindow) and widget != self:
-                widget.show()
-            
+    def closeEvent(self, event):
+        """重写关闭事件，根据触发来源决定行为"""
+        # 获取触发关闭事件的原因
+        if self.sender() and self.sender().objectName() == "back_button":
+            # 如果是通过返回按钮触发的关闭，显示主窗口
+            if self.parent_window:
+                self.parent_window.show()
+        else:
+            # 如果是通过关闭按钮触发的关闭，退出整个程序
+            QApplication.quit()
         event.accept()
 
 if __name__ == "__main__":
