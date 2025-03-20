@@ -354,14 +354,18 @@ class DataAnalysisClient(QMainWindow):
         
         # 如果该项目的窗口已经存在，就显示已有窗口
         if item_name in self.detail_windows:
-            self.detail_windows[item_name].show()
-            self.detail_windows[item_name].raise_()  # 将窗口提升到最前
-            self.detail_windows[item_name].activateWindow()  # 激活窗口
+            self.detail_windows[item_name].showMaximized()  # 使用最大化显示
+            self.detail_windows[item_name].raise_()  
+            self.detail_windows[item_name].activateWindow()
         else:
             # 创建新窗口并保存
             detail_window = DetailWindow(item_name)
+            detail_window.setParent(None)  # 设置为无父窗口
             self.detail_windows[item_name] = detail_window
-            detail_window.show()
+            detail_window.showMaximized()  # 使用最大化显示
+        
+        # 可选：隐藏主窗口
+        self.hide()
     
     def on_status_button_clicked(self, button_text):
         """状态栏按钮点击事件"""
