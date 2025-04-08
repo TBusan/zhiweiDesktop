@@ -17,7 +17,7 @@ class DetailWindow(QMainWindow):
         
         # 加载UI文件
         loader = QUiLoader()
-        ui_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "detail_window.ui")
+        ui_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui/detail_window.ui")
         self.ui = loader.load(ui_path)
         self.setCentralWidget(self.ui.centralwidget)
         

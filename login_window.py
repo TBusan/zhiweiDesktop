@@ -10,7 +10,7 @@ class LoginWindow(QMainWindow):
         
         # 加载UI文件
         loader = QUiLoader()
-        self.ui = loader.load('login_window.ui')
+        self.ui = loader.load('ui/login_window.ui')
         self.setCentralWidget(self.ui)
         
         # 获取UI控件

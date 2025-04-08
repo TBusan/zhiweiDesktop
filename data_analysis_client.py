@@ -79,7 +79,7 @@ class DataAnalysisClient(QMainWindow):
         
         # 加载UI文件
         loader = QUiLoader()
-        ui_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main_window.ui")
+        ui_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui/main_window.ui")
         self.ui = loader.load(ui_file, self)
         
         # 设置中心窗口

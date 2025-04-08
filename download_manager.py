@@ -10,7 +10,7 @@ class DownloadManager(QMainWindow):
         
         # 加载UI文件
         loader = QUiLoader()
-        ui_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "download_manager.ui")
+        ui_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui/download_manager.ui")
         self.ui = loader.load(ui_path)
         self.setCentralWidget(self.ui.centralwidget)
         
