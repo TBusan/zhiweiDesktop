@@ -3,17 +3,18 @@ import os
 import json
 import sqlite3
 from datetime import datetime
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                              QHBoxLayout, QLineEdit, QLabel, QPushButton, 
-                              QTreeWidget, QTreeWidgetItem, QSplitter, QMenu, QStyle)
-from PySide6.QtCore import Qt, QSize, Signal, QUrl, QObject, Slot
-from PySide6.QtGui import QIcon, QFont, QAction
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton, 
+                              QTreeWidgetItem, QStyle)
+from PySide6.QtCore import Qt, QSize, QUrl, QObject, Slot
+from PySide6.QtGui import QIcon
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEngineProfile, QWebEngineSettings
 from PySide6.QtWebChannel import QWebChannel
-from detail_window import DetailWindow  # 导入新创建的DetailWindow类
-from download_manager import DownloadManager  # 导入下载管理器类
-from settings_dialog import SettingsDialog  # 导入设置对话框类
+from PySide6.QtUiTools import QUiLoader
+from detail_window import DetailWindow
+from download_manager import DownloadManager
+from settings_dialog import SettingsDialog
+from custom_widgets import CustomTreeWidget
 
 # 创建一个用于与JavaScript通信的类
 class Bridge(QObject):
@@ -72,178 +73,29 @@ class Bridge(QObject):
         """接收Python传来的经纬度信息"""
         pass
 
-class CustomTreeWidget(QTreeWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setColumnCount(3)  # 设置三列：项目名称、下载图标、查看详情图标
-        self.setHeaderHidden(True)
-        self.downloaded_items = set()  # 存储已下载项目
-        self.setColumnWidth(0, 250)  # 设置第一列宽度
-        self.setColumnWidth(1, 30)   # 设置图标列宽度
-        self.setColumnWidth(2, 30)   # 设置图标列宽度
-
 class DataAnalysisClient(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("知微客户端")
-        self.setMinimumSize(1000, 600)
+        
+        # 加载UI文件
+        loader = QUiLoader()
+        ui_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main_window.ui")
+        self.ui = loader.load(ui_file, self)
+        
+        # 设置中心窗口
+        self.setCentralWidget(self.ui.centralwidget)
         
         # 创建设置按钮
         settings_btn = QPushButton()
+        settings_btn.setObjectName("settings_btn")
         settings_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogHelpButton))
         settings_btn.setIconSize(QSize(20, 20))
         settings_btn.setFixedSize(30, 30)
-        settings_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                padding: 2px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-                border-radius: 15px;
-            }
-        """)
         settings_btn.clicked.connect(self.show_settings)
         self.statusBar().addPermanentWidget(settings_btn)
         
         # 存储详情窗口的字典
         self.detail_windows = {}
-        
-        # 创建主容器
-        self.main_container = QWidget()
-        self.main_layout = QVBoxLayout(self.main_container)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.setCentralWidget(self.main_container)
-        
-        # 创建主分割器
-        self.main_splitter = QSplitter(Qt.Horizontal)
-        self.main_layout.addWidget(self.main_splitter)
-        
-        # 左侧导航面板
-        navigation_panel = QWidget()
-        navigation_layout = QVBoxLayout(navigation_panel)
-        navigation_layout.setContentsMargins(0, 0, 0, 0)
-        navigation_panel.setFixedWidth(350)
-        
-        # 搜索框
-        search_widget = QWidget()
-        search_layout = QHBoxLayout(search_widget)
-        search_layout.setContentsMargins(10, 10, 10, 10)
-        
-        self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText("请输入要搜索的用户")
-        # 添加搜索框交互
-        self.search_edit.textChanged.connect(self.filter_items)
-        self.search_edit.returnPressed.connect(self.search_items)
-        search_layout.addWidget(self.search_edit)
-        
-        navigation_layout.addWidget(search_widget)
-        
-        # 云端测区任务标题
-        task_title = QLabel("云端测区任务")
-        task_title.setStyleSheet("background-color: #f0f0f0; padding: 10px; color: black; font-weight: bold;")
-        navigation_layout.addWidget(task_title)
-        
-        # 使用自定义树形列表
-        self.test_tree = CustomTreeWidget()
-        self.test_tree.itemClicked.connect(self.on_item_clicked)
-        navigation_layout.addWidget(self.test_tree)
-        
-        # 测试类别
-        test_category = QTreeWidgetItem(self.test_tree)
-        test_category.setText(0, "测试")
-        
-        # 测试项目
-        test_items = [
-            "cs3", "cs2", "cs1", "华明路_测试", "华明路5", "华明路4", 
-            "华明路3", "华明路2", "1111", "燕记温源", "华明路", "道路1"
-        ]
-        
-        # 添加测试项目并设置图标
-        for item_text in test_items:
-            item = QTreeWidgetItem(test_category)
-            item.setText(0, item_text)
-            # 添加下载按钮
-            download_btn = QPushButton()
-            download_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
-            download_btn.setIconSize(QSize(20, 20))
-            download_btn.setFixedSize(28, 28)
-            download_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    border: none;
-                    padding: 2px;
-                }
-                QPushButton:hover {
-                    background-color: #e0e0e0;
-                    border-radius: 4px;
-                }
-            """)
-            download_btn.clicked.connect(lambda checked, name=item_text: self.download_item(name))
-            self.test_tree.setItemWidget(item, 1, download_btn)
-        
-        test_category.setExpanded(True)
-        
-        # 321类别
-        number_category = QTreeWidgetItem(self.test_tree)
-        number_category.setText(0, "321")
-        
-        # 321项目
-        number_item = QTreeWidgetItem(number_category)
-        number_item.setText(0, "123")
-        download_btn = QPushButton()
-        download_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
-        download_btn.setIconSize(QSize(20, 20))
-        download_btn.setFixedSize(28, 28)
-        download_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                padding: 2px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-                border-radius: 4px;
-            }
-        """)
-        download_btn.clicked.connect(lambda: self.download_item("123"))
-        self.test_tree.setItemWidget(number_item, 1, download_btn)
-        
-        # 测试用和激活测试类别
-        test_use_category = QTreeWidgetItem(self.test_tree)
-        test_use_category.setText(0, "测试用")
-        
-        activated_category = QTreeWidgetItem(self.test_tree)
-        activated_category.setText(0, "激活测试")
-        activated_item = QTreeWidgetItem(activated_category)
-        activated_item.setText(0, "测试456987")
-        download_btn = QPushButton()
-        download_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
-        download_btn.setIconSize(QSize(20, 20))
-        download_btn.setFixedSize(28, 28)
-        download_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                padding: 2px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-                border-radius: 4px;
-            }
-        """)
-        download_btn.clicked.connect(lambda: self.download_item("测试456987"))
-        self.test_tree.setItemWidget(activated_item, 1, download_btn)
-        
-        # 右侧内容区域
-        self.content_area = QWidget()
-        self.content_layout = QVBoxLayout(self.content_area)
-        self.content_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
-        self.content_area.setStyleSheet("background-color: #e6e9f0;")
-        
-        # 创建Web视图
-        self.web_view = QWebEngineView()
         
         # 配置 WebEngine 设置
         profile = QWebEngineProfile.defaultProfile()
@@ -258,38 +110,98 @@ class DataAnalysisClient(QMainWindow):
         self.channel = QWebChannel()
         self.bridge = Bridge()
         self.channel.registerObject("pyjs", self.bridge)
-        self.web_view.page().setWebChannel(self.channel)
+        self.ui.web_view.page().setWebChannel(self.channel)
         
         # 获取index.html的绝对路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
         html_path = os.path.join(current_dir, "map", "index.html")
         
         # 加载本地HTML文件
-        self.web_view.load(QUrl.fromLocalFile(html_path))
-        
-        # 将Web视图添加到内容区域
-        self.content_layout.addWidget(self.web_view)
+        self.ui.web_view.load(QUrl.fromLocalFile(html_path))
         
         # 创建下载管理器实例（初始隐藏）
         self.download_manager = None
         
-        # 添加到分割器
-        self.main_splitter.addWidget(navigation_panel)
-        self.main_splitter.addWidget(self.content_area)
-        
         # 设置分割比例
-        self.main_splitter.setSizes([350, 650])
+        self.ui.main_splitter.setSizes([350, 650])
         
         # 添加底部状态栏按钮
         self.statusBar().addPermanentWidget(self.create_status_button("在线任务"))
         self.statusBar().addPermanentWidget(self.create_status_button("下载管理"))
         
+        # 连接信号
+        self.ui.search_edit.textChanged.connect(self.filter_items)
+        self.ui.search_edit.returnPressed.connect(self.search_items)
+        self.ui.test_tree.itemClicked.connect(self.on_item_clicked)
+        
+        # 初始化树形控件
+        self.init_tree_widget()
+        
         # 存储原始树项目以便进行过滤
         self.store_original_items()
         
+    def init_tree_widget(self):
+        """初始化树形控件"""
+        # 测试类别
+        test_category = QTreeWidgetItem(self.ui.test_tree)
+        test_category.setText(0, "测试")
+        
+        # 测试项目
+        test_items = [
+            "cs3", "cs2", "cs1", "华明路_测试", "华明路5", "华明路4", 
+            "华明路3", "华明路2", "1111", "燕记温源", "华明路", "道路1"
+        ]
+        
+        # 添加测试项目并设置图标
+        for item_text in test_items:
+            item = QTreeWidgetItem(test_category)
+            item.setText(0, item_text)
+            # 添加下载按钮
+            download_btn = QPushButton()
+            download_btn.setObjectName(f"download_btn_{item_text}")
+            download_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
+            download_btn.setIconSize(QSize(20, 20))
+            download_btn.setFixedSize(28, 28)
+            download_btn.clicked.connect(lambda checked, name=item_text: self.download_item(name))
+            self.ui.test_tree.setItemWidget(item, 1, download_btn)
+        
+        test_category.setExpanded(True)
+        
+        # 321类别
+        number_category = QTreeWidgetItem(self.ui.test_tree)
+        number_category.setText(0, "321")
+        
+        # 321项目
+        number_item = QTreeWidgetItem(number_category)
+        number_item.setText(0, "123")
+        download_btn = QPushButton()
+        download_btn.setObjectName("download_btn_123")
+        download_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
+        download_btn.setIconSize(QSize(20, 20))
+        download_btn.setFixedSize(28, 28)
+        download_btn.clicked.connect(lambda: self.download_item("123"))
+        self.ui.test_tree.setItemWidget(number_item, 1, download_btn)
+        
+        # 测试用和激活测试类别
+        test_use_category = QTreeWidgetItem(self.ui.test_tree)
+        test_use_category.setText(0, "测试用")
+        
+        activated_category = QTreeWidgetItem(self.ui.test_tree)
+        activated_category.setText(0, "激活测试")
+        activated_item = QTreeWidgetItem(activated_category)
+        activated_item.setText(0, "测试456987")
+        download_btn = QPushButton()
+        download_btn.setObjectName("download_btn_test456987")
+        download_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
+        download_btn.setIconSize(QSize(20, 20))
+        download_btn.setFixedSize(28, 28)
+        download_btn.clicked.connect(lambda: self.download_item("测试456987"))
+        self.ui.test_tree.setItemWidget(activated_item, 1, download_btn)
+
     def create_status_button(self, text):
         """创建状态栏按钮"""
         button = QPushButton()
+        button.setObjectName(f"status_btn_{text}")
         button.setText(text)
         button.setFixedSize(90, 30)
         button.clicked.connect(lambda: self.on_status_button_clicked(text))
@@ -298,10 +210,10 @@ class DataAnalysisClient(QMainWindow):
     def store_original_items(self):
         """存储原始树项目以便搜索过滤"""
         self.original_items = []
-        root_count = self.test_tree.topLevelItemCount()
+        root_count = self.ui.test_tree.topLevelItemCount()
         
         for i in range(root_count):
-            root = self.test_tree.topLevelItem(i)
+            root = self.ui.test_tree.topLevelItem(i)
             root_text = root.text(0)
             
             children = []
@@ -316,7 +228,7 @@ class DataAnalysisClient(QMainWindow):
         if not text:
             # 如果搜索框为空，恢复原始项目
             for category, index, children in self.original_items:
-                root = self.test_tree.topLevelItem(index)
+                root = self.ui.test_tree.topLevelItem(index)
                 root.setHidden(False)
                 for child_text, child_index in children:
                     if child_index < root.childCount():
@@ -326,7 +238,7 @@ class DataAnalysisClient(QMainWindow):
         text = text.lower()
         # 隐藏不匹配的项目
         for category, index, children in self.original_items:
-            root = self.test_tree.topLevelItem(index)
+            root = self.ui.test_tree.topLevelItem(index)
             
             # 检查是否有任何子项匹配
             has_match = False
@@ -352,7 +264,7 @@ class DataAnalysisClient(QMainWindow):
     
     def search_items(self):
         """按回车键进行搜索"""
-        search_text = self.search_edit.text()
+        search_text = self.ui.search_edit.text()
         if search_text:
             self.statusBar().showMessage(f"正在搜索: {search_text}", 3000)
             self.filter_items(search_text)
@@ -375,60 +287,39 @@ class DataAnalysisClient(QMainWindow):
                 lat, lng = coordinates[item_name]
                 # 调用JavaScript函数更新地图位置
                 js_code = f"updateMapLocation({lat}, {lng});"
-                self.web_view.page().runJavaScript(js_code)
+                self.ui.web_view.page().runJavaScript(js_code)
             
             self.statusBar().showMessage(f"选中项目: {item_name}", 2000)
     
     def download_item(self, item_name):
         """下载项目"""
         self.statusBar().showMessage(f"开始下载: {item_name}", 3000)
-        self.selected_item_label.setText(f"正在下载 {item_name}...")
         
         # 模拟下载完成后的操作
         item = self.find_item_by_name(item_name)
         if item:
             # 移除下载按钮
-            self.test_tree.removeItemWidget(item, 1)
+            self.ui.test_tree.removeItemWidget(item, 1)
             # 添加删除和查看详情按钮
             delete_btn = QPushButton()
+            delete_btn.setObjectName(f"delete_btn_{item_name}")
             delete_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon))
             delete_btn.setIconSize(QSize(20, 20))
             delete_btn.setFixedSize(28, 28)
-            delete_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    border: none;
-                    padding: 2px;
-                }
-                QPushButton:hover {
-                    background-color: #e0e0e0;
-                    border-radius: 4px;
-                }
-            """)
             delete_btn.clicked.connect(lambda: self.delete_item(item_name))
             
             view_btn = QPushButton()
+            view_btn.setObjectName(f"view_btn_{item_name}")
             view_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogContentsView))
             view_btn.setIconSize(QSize(20, 20))
             view_btn.setFixedSize(28, 28)
-            view_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    border: none;
-                    padding: 2px;
-                }
-                QPushButton:hover {
-                    background-color: #e0e0e0;
-                    border-radius: 4px;
-                }
-            """)
             view_btn.clicked.connect(lambda: self.view_item_details(item_name))
             
-            self.test_tree.setItemWidget(item, 1, delete_btn)
-            self.test_tree.setItemWidget(item, 2, view_btn)
+            self.ui.test_tree.setItemWidget(item, 1, delete_btn)
+            self.ui.test_tree.setItemWidget(item, 2, view_btn)
             
             # 添加到已下载集合
-            self.test_tree.downloaded_items.add(item_name)
+            self.ui.test_tree.downloaded_items.add(item_name)
 
     def delete_item(self, item_name):
         """删除已下载的项目"""
@@ -437,27 +328,17 @@ class DataAnalysisClient(QMainWindow):
         if item:
             # 恢复为下载按钮
             for col in range(1, 3):
-                self.test_tree.removeItemWidget(item, col)
+                self.ui.test_tree.removeItemWidget(item, col)
             download_btn = QPushButton()
+            download_btn.setObjectName(f"download_btn_{item_name}")
             download_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
             download_btn.setIconSize(QSize(20, 20))
             download_btn.setFixedSize(28, 28)
-            download_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    border: none;
-                    padding: 2px;
-                }
-                QPushButton:hover {
-                    background-color: #e0e0e0;
-                    border-radius: 4px;
-                }
-            """)
             download_btn.clicked.connect(lambda: self.download_item(item_name))
-            self.test_tree.setItemWidget(item, 1, download_btn)
+            self.ui.test_tree.setItemWidget(item, 1, download_btn)
             
             # 从已下载集合中移除
-            self.test_tree.downloaded_items.remove(item_name)
+            self.ui.test_tree.downloaded_items.remove(item_name)
 
     def find_item_by_name(self, name):
         """通过名称查找树形项目"""
@@ -471,8 +352,8 @@ class DataAnalysisClient(QMainWindow):
                     return result
             return None
         
-        for i in range(self.test_tree.topLevelItemCount()):
-            root = self.test_tree.topLevelItem(i)
+        for i in range(self.ui.test_tree.topLevelItemCount()):
+            root = self.ui.test_tree.topLevelItem(i)
             if root.text(0) == name:
                 return root
             result = search_items(root)
@@ -507,15 +388,15 @@ class DataAnalysisClient(QMainWindow):
                 self.download_manager.hide()
             
             # 从主布局中移除当前部件
-            if self.main_layout.count() > 0:
-                current_widget = self.main_layout.itemAt(0).widget()
+            if self.ui.main_layout.count() > 0:
+                current_widget = self.ui.main_layout.itemAt(0).widget()
                 if current_widget:
                     current_widget.hide()
-                    self.main_layout.removeWidget(current_widget)
+                    self.ui.main_layout.removeWidget(current_widget)
             
             # 添加主分割器到布局
-            self.main_layout.addWidget(self.main_splitter)
-            self.main_splitter.show()
+            self.ui.main_layout.addWidget(self.ui.main_splitter)
+            self.ui.main_splitter.show()
             
         elif button_text == "下载管理":
             # 显示下载管理器
@@ -526,14 +407,14 @@ class DataAnalysisClient(QMainWindow):
                 self.download_manager = DownloadManager(self)
             
             # 从主布局中移除当前部件
-            if self.main_layout.count() > 0:
-                current_widget = self.main_layout.itemAt(0).widget()
+            if self.ui.main_layout.count() > 0:
+                current_widget = self.ui.main_layout.itemAt(0).widget()
                 if current_widget:
                     current_widget.hide()
-                    self.main_layout.removeWidget(current_widget)
+                    self.ui.main_layout.removeWidget(current_widget)
             
             # 添加下载管理器到布局
-            self.main_layout.addWidget(self.download_manager)
+            self.ui.main_layout.addWidget(self.download_manager)
             self.download_manager.show()
 
     def show_settings(self):

@@ -1,106 +1,25 @@
 import sys
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QLineEdit, QLabel, QPushButton, 
-                             QMessageBox)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QIcon, QFont
+from PySide6.QtWidgets import (QApplication, QMainWindow, QMessageBox, QLineEdit, QPushButton)
+from PySide6.QtCore import Qt
+from PySide6.QtUiTools import QUiLoader
 from data_analysis_client import DataAnalysisClient
 
 class LoginWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("数据分析客户端 - 登录")
-        self.setFixedSize(500, 400)  # 增加窗口大小
         
-        # 创建中央部件和布局
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
-        layout.setSpacing(25)  # 增加间距
-        layout.setContentsMargins(60, 40, 60, 40)  # 增加边距
+        # 加载UI文件
+        loader = QUiLoader()
+        self.ui = loader.load('login_window.ui')
+        self.setCentralWidget(self.ui)
         
-        # 添加标题
-        title_label = QLabel("知微客户端")
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("font-size: 28px; font-weight: bold; color: #333; margin-bottom: 20px;")
-        layout.addWidget(title_label)
+        # 获取UI控件
+        self.username_edit = self.ui.findChild(QLineEdit, 'username_edit')
+        self.password_edit = self.ui.findChild(QLineEdit, 'password_edit')
+        self.login_button = self.ui.findChild(QPushButton, 'login_button')
         
-        # 用户名输入框
-        username_layout = QVBoxLayout()
-        username_label = QLabel("用户名:")
-        username_label.setStyleSheet("color: #333; font-size: 16px; margin-bottom: 5px;")
-        self.username_edit = QLineEdit()
-        self.username_edit.setPlaceholderText("请输入用户名")
-        self.username_edit.setMinimumHeight(45)  # 设置最小高度
-        self.username_edit.setStyleSheet("""
-            QLineEdit {
-                padding: 12px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                font-size: 16px;
-                background-color: white;
-                color: #000000;
-            }
-            QLineEdit:focus {
-                border: 2px solid #3a3f51;
-            }
-        """)
-        username_layout.addWidget(username_label)
-        username_layout.addWidget(self.username_edit)
-        layout.addLayout(username_layout)
-        
-        # 密码输入框
-        password_layout = QVBoxLayout()
-        password_label = QLabel("密码:")
-        password_label.setStyleSheet("color: #333; font-size: 16px; margin-bottom: 5px;")
-        self.password_edit = QLineEdit()
-        self.password_edit.setPlaceholderText("请输入密码")
-        self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)  # 修正密码输入模式
-        self.password_edit.setMinimumHeight(45)  # 设置最小高度
-        self.password_edit.setStyleSheet("""
-            QLineEdit {
-                padding: 12px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                font-size: 16px;
-                background-color: white;
-                color: #000000;
-            }
-            QLineEdit:focus {
-                border: 2px solid #3a3f51;
-            }
-        """)
-        password_layout.addWidget(password_label)
-        password_layout.addWidget(self.password_edit)
-        layout.addLayout(password_layout)
-        
-        # 登录按钮
-        self.login_button = QPushButton("登 录")  # 在两个字之间加入空格
-        self.login_button.setMinimumHeight(50)  # 增加按钮高度
-        self.login_button.setStyleSheet("""
-            QPushButton {
-                background-color: #3a3f51;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 12px 24px;  # 增加水平内边距
-                font-size: 18px;
-                font-weight: bold;
-                min-width: 250px;
-                margin-top: 20px;
-                letter-spacing: 4px;  # 添加字间距
-            }
-            QPushButton:hover {
-                background-color: #2c3143;
-            }
-            QPushButton:pressed {
-                background-color: #1f2532;
-            }
-        """)
+        # 连接信号
         self.login_button.clicked.connect(self.login)
-        layout.addWidget(self.login_button, alignment=Qt.AlignCenter)
-        
-        # 设置回车键触发登录
         self.password_edit.returnPressed.connect(self.login)
         self.username_edit.returnPressed.connect(lambda: self.password_edit.setFocus())
         
@@ -131,27 +50,6 @@ class LoginWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    
-    # 设置全局样式
-    app.setStyleSheet("""
-        QMainWindow {
-            background-color: #f5f5f5;
-        }
-        QMessageBox {
-            background-color: white;
-        }
-        QMessageBox QPushButton {
-            padding: 5px 15px;
-            border-radius: 4px;
-            background-color: #3a3f51;
-            color: white;
-            min-width: 80px;
-            min-height: 25px;
-        }
-        QMessageBox QPushButton:hover {
-            background-color: #2c3143;
-        }
-    """)
     
     window = LoginWindow()
     window.show()
